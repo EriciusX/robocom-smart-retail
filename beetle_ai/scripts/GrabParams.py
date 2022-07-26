@@ -10,10 +10,8 @@ class GrabParams(object):
 
 	coords_low_right  = [176, -61, 225, -75, 45, -83]
 	coords_low_left   = [176,  61, 225, -78, 57, -85]
-	grab_direct = "right"
-	if grab_direct == "right":
-		y_bias = 5
-		x_bias = 40
+	y_bias = 5
+	x_bias = 40
 	debug = True #True         
 	ONNX_MODEL = '/home/robuster/beetle_ai/scripts/beetle_obj.onnx'
 	IMG_SIZE = 640
@@ -23,8 +21,9 @@ class GrabParams(object):
 
 #需要调试的参数
 	cap_num = 2   #摄像头编号
+	set_delay = 4 #抓取完成后夹子放开延时
 
-	set_down_direction = "right"#放置方向，位于车左还是右
+	put_down_direction = "right"#放置方向，位于车左还是右
 	grab_low_right    = 300     #低左   的机械臂高度      加+高   减-低  以5为单位调节   
 	grab_low_left     = 295     #低右   的机械臂高度      同上
 	grab_high_right   = 350     #高右   的机械臂高度  
@@ -48,7 +47,7 @@ class GrabParams(object):
 	move_power_low_left    = -0.5    #低左
 
 #物块放置测距误差，基本不用动
-	go_diff = 0
+	set_diff = 0
 #判断识别物是否是目标，  对应数字，改detect_target
 	classes = ("bird", "clock", "cat","banana ","apple ")
 	#             0       1       2      3        4

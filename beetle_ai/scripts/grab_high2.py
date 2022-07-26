@@ -32,21 +32,21 @@ class Detect_marker(object):
         self.c_x, self.c_y = grabParams.IMG_SIZE/2, grabParams.IMG_SIZE/2
         self.ratio = grabParams.ratio
         self.lv = 940
-        self.hr_acuro = 2.1
-        self.miss_count = 0
-        self.class_list = []
+        self.hr = 2.1
+        self.detect_count = 0
+        self.clazz = []
         self.direction = 0 
         self.aruco_count = 0
 
     # Grasping motion
     def move(self, x, y, dist):
-        global height_bias, done
+        global done
         if self.direction:
-            coords = grabParams.coords_high_left
-            coords_target = [coords[0],  coords[1]+int(y/2),  grabParams.grab_high_left, coords[3] + grabParams.pitch_high_left,  coords[4] + grabParams.roll_high_left,  coords[5]]
+            coords_ori = grabParams.coords_high_left
+            coords_target = [coords_ori[0],  coords_ori[1]+int(y/2),  grabParams.grab_high_left, coords_ori[3] + grabParams.pitch_high_left,  coords_ori[4] + grabParams.roll_high_left,  coords_ori[5]]
         else:
-            coords = grabParams.coords_high_right
-            coords_target = [coords[0],  coords[1]+int(y),  grabParams.grab_high_right,  coords[3] + grabParams.pitch_high_right,  coords[4] + grabParams.pitch_high_right,  coords[5] - int(y/2)]
+            coords_ori = grabParams.coords_high_right
+            coords_target = [coords_ori[0],  coords_ori[1]+int(y),  grabParams.grab_high_right,  coords_ori[3] + grabParams.pitch_high_right,  coords_ori[4] + grabParams.pitch_high_right,  coords_ori[5] - int(y/2)]
         self.mc.send_coords(coords_target, 70, 0)
         time.sleep(0.2)
         self.mc.set_color(255,0,0)  #抓取，亮红灯
@@ -61,10 +61,8 @@ class Detect_marker(object):
         self.mc.set_color(0,255,0) #抓取结束，亮绿灯
 
     def get_position(self, x, y):
-        wx = wy = 0
-        if grabParams.grab_direct == "right":
-            wx = (self.c_x - x) * self.ratio
-            wy = (y - self.c_y) * self.ratio
+        wx = (self.c_x - x) * self.ratio
+        wy = (y - self.c_y) * self.ratio
         return wx, wy
             
     def transform_frame(self, frame):
@@ -73,8 +71,8 @@ class Detect_marker(object):
    
     def obj_detect(self, img):
         global done
-        x=y=0
-        w=h=0
+        x = y = 0
+        w = h = 0
         right_target = 0
         net = cv2.dnn.readNetFromONNX(grabParams.ONNX_MODEL)
         blob = cv2.dnn.blobFromImage(img, 1 / 255.0, (grabParams.IMG_SIZE, grabParams.IMG_SIZE), [0, 0, 0], swapRB=True, crop=False)
@@ -84,14 +82,14 @@ class Detect_marker(object):
         if boxes is not None:
             for i in range(len(classes)):
                 if classes[i] == grabParams.detect_target:
-                    self.class_list.append(i)
-            if len(self.class_list):
-                scores_max = scores[self.class_list[0]]
-                right_target = self.class_list[0]
-                for i in range(len(self.class_list)):
-                    if scores[self.class_list[i]] > scores_max:
-                        scores_max = scores[self.class_list[i]]
-                        right_target = self.class_list[i]
+                    self.clazz.append(i)
+            if len(self.clazz):
+                scores_max = scores[self.clazz[0]]
+                right_target = self.clazz[0]
+                for i in range(len(self.clazz)):
+                    if scores[self.clazz[i]] > scores_max:
+                        scores_max = scores[self.clazz[i]]
+                        right_target = self.clazz[i]
                 self.yolo.draw(img, zip(boxes)[right_target], zip(scores)[right_target], zip(classes)[right_target])
                 left, top, right, bottom = boxes[right_target]
                 x = int((left+right)/2)
@@ -103,8 +101,8 @@ class Detect_marker(object):
                 self.mc.set_color(255,192,203) #识别不到，亮粉灯
                 return None
         else:
-            self.miss_count+=1
-            if self.miss_count == 5:
+            self.detect_count+=1
+            if self.detect_count == 5:
                 done = True
                 self.mc.set_color(255,192,203) #识别不到，亮粉灯
             return None
@@ -118,8 +116,8 @@ class Detect_marker(object):
             return None
 
     def distance(self, w):
-        dist = self.hr_acuro / w * self.lv
-        dist = dist - 9 - grabParams.go_diff
+        dist = self.hr / w * self.lv
+        dist = dist - 9 - grabParams.set_diff
         return dist
 
     def aruco(self, frame):
@@ -149,9 +147,9 @@ class Detect_marker(object):
 
     def go(self, dist):
         if self.direction:
-            count_max = int(dist + grabParams.move_power_high_left + 0.5)
+            go_count = int(dist + grabParams.move_power_high_left + 0.5)
         else:
-            count_max = int(dist + grabParams.move_power_high_right + 0.5)
+            go_count = int(dist + grabParams.move_power_high_right + 0.5)
         count = 0
         move_cmd = Twist()
         time.sleep(0.5)
@@ -160,10 +158,10 @@ class Detect_marker(object):
             count += 1
             move_cmd.linear.x = 0.1
             move_cmd.angular.z = 0
-            if count_max - count < 2:
+            if go_count - count < 2:
                 move_cmd.linear.x = 0.05 
                 move_cmd.angular.z = 0
-            if count == count_max:
+            if count == go_count:
                 break
             self.rate.sleep()
 
@@ -184,19 +182,19 @@ class Detect_marker(object):
     def set_down(self):
         if grabParams.set_down_direction == "right":
             if self.direction:
-                angle = self.mc.get_angles()
-                self.mc.send_angles([angle[0] - 135, angle[1], angle[2], angle[3] + 10 ,angle[4] + 45, angle[5]], 70)
+                angles = self.mc.get_angles()
+                self.mc.send_angles([angles[0] - 135, angles[1], angles[2], angles[3] + 10 ,angles[4] + 45, angles[5]], 70)
             else:
-                angle = self.mc.get_angles()
-                self.mc.send_angles([angle[0] - 35, angle[1], angle[2], angle[3] + 30 ,angle[4] - 45, angle[5]], 70)
+                angles = self.mc.get_angles()
+                self.mc.send_angles([angles[0] - 35, angles[1], angles[2], angles[3] + 30 ,angles[4] - 45, angles[5]], 70)
         else:
             if self.direction:
-                angle = self.mc.get_angles()
-                self.mc.send_angles([angle[0], angle[1], angle[2] - 45, angle[3] + 20, angle[4] + 90, angle[5]], 70)
+                angles = self.mc.get_angles()
+                self.mc.send_angles([angles[0], angles[1], angles[2] - 45, angles[3] + 20, angles[4] + 90, angles[5]], 70)
             else:
-                angle = self.mc.get_angles()
-                self.mc.send_angles([angle[0] + 45, angle[1] - 30, angle[2] - 80,  angle[3] + 80 ,angle[4] + 45 , angle[5]], 70)
-        time.sleep(4)
+                angles = self.mc.get_angles()
+                self.mc.send_angles([angles[0] + 45, angles[1] - 30, angles[2] - 80,  angles[3] + 80 ,angles[4] + 45 , angles[5]], 70)
+        time.sleep(grabParams.set_delay)
         basic.grap(False)
 
     def show_image(self, img):
@@ -221,7 +219,7 @@ def main():
             dist_aruco = detect.aruco(frame)         
             x, y, _ = detect_result
             real_x, real_y = detect.get_position(x, y)
-            detect.move(real_x + grabParams.x_bias, real_y + grabParams.y_bias, dist_aruco)
+            detect.move(0, real_y + grabParams.y_bias, dist_aruco)
             cap.close()
             
 if __name__ == "__main__":
