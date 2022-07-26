@@ -38,7 +38,6 @@ class Detect_marker(object):
         self.direction = 0 
         self.aruco_count = 0
 
-    # Grasping motion
     def move(self, x, y, dist):
         global done
         if self.direction:
@@ -46,17 +45,17 @@ class Detect_marker(object):
             coords_target = [coords_ori[0],  coords_ori[1]+int(y/2),  grabParams.grab_high_left, coords_ori[3] + grabParams.pitch_high_left,  coords_ori[4] + grabParams.roll_high_left,  coords_ori[5]]
         else:
             coords_ori = grabParams.coords_high_right
-            coords_target = [coords_ori[0],  coords_ori[1]+int(y),  grabParams.grab_high_right,  coords_ori[3] + grabParams.pitch_high_right,  coords_ori[4] + grabParams.pitch_high_right,  coords_ori[5] - int(y/2)]
+            coords_target = [coords_ori[0],  coords_ori[1]+int(y),  grabParams.grab_high_right,  coords_ori[3] + grabParams.pitch_high_right,  coords_ori[4] + grabParams.roll_high_right,  coords_ori[5] - int(y/2)]
         self.mc.send_coords(coords_target, 70, 0)
         time.sleep(0.2)
         self.mc.set_color(255,0,0)  #抓取，亮红灯
-        self.go(dist) 
+        self.going(dist) 
         time.sleep(0.5)
         basic.grap(True)
         time.sleep(0.2)
         self.back() 
         time.sleep(0.5)
-        self.set_down() 
+        self.put_down() 
         done = True
         self.mc.set_color(0,255,0) #抓取结束，亮绿灯
 
@@ -145,7 +144,7 @@ class Detect_marker(object):
         self.direction = int(f.read())
         f.close()
 
-    def go(self, dist):
+    def going(self, dist):
         if self.direction:
             go_count = int(dist + grabParams.move_power_high_left + 0.5)
         else:
@@ -166,10 +165,10 @@ class Detect_marker(object):
             self.rate.sleep()
 
     def back(self):
-        count = 6
+        count = 7
         move_cmd = Twist()
         move_cmd.linear.x = -0.2
-        if grabParams.set_down_direction == "right":
+        if grabParams.put_down_direction == "right":
             move_cmd.angular.z = -0.3
         else:
             move_cmd.angular.z = 0.3
@@ -179,8 +178,8 @@ class Detect_marker(object):
             count-=1
             self.rate.sleep()
 
-    def set_down(self):
-        if grabParams.set_down_direction == "right":
+    def put_down(self):
+        if grabParams.put_down_direction == "right":
             if self.direction:
                 angles = self.mc.get_angles()
                 self.mc.send_angles([angles[0] - 135, angles[1], angles[2], angles[3] + 10 ,angles[4] + 45, angles[5]], 70)
@@ -216,11 +215,13 @@ def main():
         if detect_result is None:           
             continue
         else:   
-            dist_aruco = detect.aruco(frame)         
-            x, y, _ = detect_result
-            real_x, real_y = detect.get_position(x, y)
-            detect.move(0, real_y + grabParams.y_bias, dist_aruco)
-            cap.close()
+            dist_aruco = detect.aruco(frame)  
+            if dist_aruco != None:       
+                x, y, _ = detect_result
+                real_x, real_y = detect.get_position(x, y)
+                detect.move(0, real_y + grabParams.y_bias, dist_aruco)
+            else:
+                cap.close()
             
 if __name__ == "__main__":
     main()

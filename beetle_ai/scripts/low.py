@@ -1,3 +1,4 @@
+#encoding: UTF-8
 from pymycobot.mycobot import MyCobot
 from pymycobot.genre import Angle
 import basic, os
@@ -17,12 +18,12 @@ mc = MyCobot(grabParams.usb_dev, grabParams.baudrate)
 mc.set_color(0,255,255)#运行，亮蓝灯 
 
 if direction:  
-    mc.send_coords(grabParams.coords_l, 60, 0)
+    mc.send_coords(grabParams.coords_low_right, 60, 0)
     f = open("/home/robuster/beetle_ai/scripts/direction.txt", "w")
     f.write('0')
     f.close()
 else:
-    mc.send_coords(grabParams.coords_ll, 60, 0)
+    mc.send_coords(grabParams.coords_low_left, 60, 0)
     f = open("/home/robuster/beetle_ai/scripts/direction.txt", "w")
     f.write('1')
     f.close()

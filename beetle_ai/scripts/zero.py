@@ -1,3 +1,4 @@
+#encoding: UTF-8
 from pymycobot.mycobot import MyCobot
 from pymycobot.genre import Angle
 import time

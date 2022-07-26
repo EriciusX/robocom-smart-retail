@@ -44,7 +44,7 @@ class GrabParams(object):
 	move_power_high_right  = 2       #高右
 	move_power_high_left   = 3.5     #高左
 	move_power_low_right   = -1.5    #低右
-	move_power_low_left    = -0.5    #低左
+	move_power_low_left    = 2    #低左
 
 #物块放置测距误差，基本不用动
 	set_diff = 0

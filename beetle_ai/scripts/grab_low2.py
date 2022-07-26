@@ -167,7 +167,7 @@ class Detect_marker(object):
             self.rate.sleep()
 
     def back(self):
-        count = 6
+        count = 7
         move_cmd = Twist()
         move_cmd.linear.x = -0.2
         if grabParams.put_down_direction == "right":
@@ -210,10 +210,12 @@ def main():
             continue
         else:            
             dist = detect.aruco(frame)
-            x, y, w = detect_result
-            real_x, real_y = detect.get_position(x, y)
-            detect.grab(0 , real_y + grabParams.y_bias, dist)
-            cap.close()
+            if dist != None:
+                x, y, w = detect_result
+                real_x, real_y = detect.get_position(x, y)
+                detect.grab(0 , real_y + grabParams.y_bias, dist)
+            else:
+                cap.close()
             
 if __name__ == "__main__":
     main()
