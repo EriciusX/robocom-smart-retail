@@ -11,15 +11,10 @@ angular = 0 # linear  = 1
 def grap(flag):
     if flag:
         # close
-        # self.mc.set_gripper_state(1, 0)
-        time.sleep(0.1)
-        mc.set_gripper_value(40,60)
-        time.sleep(1)
+        mc.set_gripper_value(40,90)
     else:
         # open
-        time.sleep(0.1)
-        mc.set_gripper_value(255,60)
-        time.sleep(1)
+        mc.set_gripper_value(255,90)
 
 def move_to_target_coords(coords,speed):
     print("move_to_target_coords_2")

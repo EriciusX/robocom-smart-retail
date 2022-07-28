@@ -42,19 +42,19 @@ class Detect_marker(object):
         global done
         if self.direction:
             coords_ori = grabParams.coords_low_left
-            coords_grab = [coords_ori[0],  coords_ori[1]+int(y/3),  grabParams.grab_low_left, coords_ori[3] + grabParams.pitch_low_left,  coords_ori[4] + grabParams.roll_low_left,  coords_ori[5]]
+            coords_grab = [coords_ori[0],  coords_ori[1]+int(y/3 + 0.5),  grabParams.grab_low_left, coords_ori[3] + grabParams.pitch_low_left,  coords_ori[4] + grabParams.roll_low_left,  coords_ori[5]]
         else:
             coords_ori = grabParams.coords_low_right
-            coords_grab = [coords_ori[0],  coords_ori[1]+int(y),   grabParams.grab_low_right, coords_ori[3] + grabParams.pitch_low_right,  coords_ori[4] + grabParams.roll_low_right,  coords_ori[5] - int(y/2)]
+            coords_grab = [coords_ori[0],  coords_ori[1]+int(y + 0.5),   grabParams.grab_low_right, coords_ori[3] + grabParams.pitch_low_right,  coords_ori[4] + grabParams.roll_low_right,  coords_ori[5] - int(y/3 + 0.5)]
         self.mc.send_coords(coords_grab, 80, 0)
         time.sleep(0.2)
         self.mc.set_color(255,0,0)  #抓取，亮红灯
         self.going(dist) 
         time.sleep(0.2)
         basic.grap(True)
-        time.sleep(0.2)
+        time.sleep(0.4)
         self.back() 
-        time.sleep(0.5)
+        time.sleep(0.2)
         self.put_down()  
         done = True
         self.mc.set_color(0,255,0) #抓取结束，亮绿灯
@@ -128,9 +128,13 @@ class Detect_marker(object):
                 )
             if len(corners) > 0:
                 x = corners[0][0][0][0] + corners[0][0][1][0] + corners[0][0][2][0] + corners[0][0][3][0]
+                y = corners[0][0][0][1] + corners[0][0][1][1] + corners[0][0][2][1] + corners[0][0][3][1]
                 x = x/4.0
+                y = y/4.0
                 x_size_p = abs(x - corners[0][0][0][0])*2
-                dist = self.distance(x_size_p)
+                y_size_p = abs(y - corners[0][0][0][1])*2
+                lenth = (x_size_p + y_size_p)/2
+                dist = self.distance(lenth)
                 return dist
             elif self.aruco_count == 3:
                 done = True
@@ -141,6 +145,8 @@ class Detect_marker(object):
         self.mc.set_color(0,0,255) #成功调用程序，亮蓝灯
         f = open("/home/robuster/beetle_ai/scripts/direction.txt", "r+")
         self.direction = int(f.read())
+        f.seek(0)
+        f.truncate()
         f.write('1')
         f.close()
 
@@ -167,9 +173,9 @@ class Detect_marker(object):
             self.rate.sleep()
 
     def back(self):
-        count = 7
+        count = 5
         move_cmd = Twist()
-        move_cmd.linear.x = -0.2
+        move_cmd.linear.x = -0.3
         if grabParams.put_down_direction == "right":
             move_cmd.angular.z = -0.3
         else:
@@ -182,13 +188,19 @@ class Detect_marker(object):
 
     def put_down(self):
         if grabParams.put_down_direction == "right":
-            angles = self.mc.get_angles()
-            self.mc.send_angles([angles[0] - 90, angles[1], angles[2], angles[3] + 10 ,angles[4], angles[5]], 70)
+            if self.direction:
+                angles = self.mc.get_angles()
+                self.mc.send_angles([angles[0] - 90, angles[1], angles[2], angles[3] + 10 ,angles[4], angles[5]], 70)
+            else:
+                angles = self.mc.get_angles()
+                self.mc.send_angles([angles[0] - 80, angles[1]+90, angles[2]-115, angles[3] + 10 ,angles[4], angles[5]], 70)
         else:
-            angles = self.mc.get_angles()
-            self.mc.send_angles([angles[0] + 90, angles[1], angles[2], angles[3] + 10 ,angles[4], angles[5]], 70)
-        time.sleep(grabParams.set_delay)
-        basic.grap(False)
+            if self.direction:
+                angles = self.mc.get_angles()
+                self.mc.send_angles([angles[0] + 75, angles[1], angles[2], angles[3] + 10 ,angles[4], angles[5]], 70)
+            else:
+                angles = self.mc.get_angles()
+                self.mc.send_angles([angles[0] + 90, angles[1]+90, angles[2]-110, angles[3] + 10 ,angles[4], angles[5]], 70)
 
     def show_image(self, img):
         if grabParams.debug and args.debug:
@@ -199,11 +211,10 @@ def main():
     detect = Detect_marker()
     detect.prog_init()
     cap = FastVideoCapture(grabParams.cap_num)
-    time.sleep(1) 
+    time.sleep(0.5) 
     while cv2.waitKey(1) < 0 and not done:
         frame = cap.read()
         frame = detect.transform_frame(frame)
-        detect.show_image(frame)
         detect_result = detect.obj_detect(frame)
         detect.show_image(frame)
         if detect_result is None:           

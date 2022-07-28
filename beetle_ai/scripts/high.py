@@ -19,12 +19,12 @@ mc = MyCobot(grabParams.usb_dev, grabParams.baudrate)
 mc.set_color(0,255,255)#运行，亮蓝灯
 
 if direction:  
-    mc.send_coords(grabParams.coords_high_right, 60, 0)
+    mc.send_coords(grabParams.coords_high_right, 70, 0)
     f = open("/home/robuster/beetle_ai/scripts/direction.txt", "w")
     f.write('0')
     f.close()
 else:
-    mc.send_coords(grabParams.coords_high_left, 60, 0)
+    mc.send_coords(grabParams.coords_high_left, 70, 0)
     f = open("/home/robuster/beetle_ai/scripts/direction.txt", "w")
     f.write('1')
     f.close()

@@ -87,6 +87,19 @@ void LogTeleop::LogCallback(const sensor_msgs::Joy::ConstPtr& Joy)
 			}			  
 			ros::Duration(1).sleep();
 		}
+		else if(Joy->buttons[0])
+		{
+			system("killall -9  python");
+			printf("kill"); 
+			ros::Duration(1).sleep();
+		}
+		else if(Joy->buttons[2])
+		{
+			system("killall -9  python");
+			system("python /home/robuster/beetle_ai/scripts/down.py");
+			printf("down"); 
+			ros::Duration(1).sleep();
+		}
 		else if(Joy->buttons[8])//button Back
 		{
 			system("killall -9  python");
